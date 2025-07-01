@@ -1,6 +1,7 @@
 ✅ 第一步：Fork 本仓库
 打开本项目页面
 点击右上角 Fork 按钮（复制到你自己的 GitHub 账号下）
+
 ✅ 第二步：设置变量
 回到你的 GitHub 仓库页面 → 点上方 Settings → 左侧 Secrets and variables → Actions→ 点 New repository secret：
 
