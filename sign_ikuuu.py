@@ -3,14 +3,14 @@ import json
 import os
 from wx_msg import send_wx  # 从外部模块引入
 
-# 企业微信配置（你可以放环境变量里，这里为了方便测试直接写死）
+# 企业微信推送在变量中配置（可选）
 corpid = os.environ.get('WX_CORPID') or ''       # 企业ID
 corpsecret = os.environ.get('WX_CORPSECRET') or ''  # 应用密钥
 agentid = os.environ.get('WX_AGENTID') or ''                # 应用ID
 
 
 def handler(event=None, context=None):
-    # 本地测试建议直接写账号密码（或保留 os.environ 也可以）
+    # IKUUU账号密码在变量中配置
     email = os.environ.get('IKUUU_EMAIL') or ''
     passwd = os.environ.get('IKUUU_PASSWORD') or ''
 
