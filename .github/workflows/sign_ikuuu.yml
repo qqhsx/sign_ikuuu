@@ -1,0 +1,32 @@
+name: Auto Sign-in for BBS
+
+on:
+  schedule:
+    - cron: '10 23 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  sign_in_job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run sign-in script
+        env:
+          IKUUU_EMAIL: ${{ secrets.IKUUU_EMAIL }}
+          IKUUU_PASSWORD: ${{ secrets.IKUUU_PASSWORD }}
+          WX_CORPID: ${{ secrets.WX_CORPID }}
+          WX_CORPSECRET: ${{ secrets.WX_CORPSECRET }}
+          WX_AGENTID: ${{ secrets.WX_AGENTID }}
+        run: python sign_ikuuu.py  # 脚本名
