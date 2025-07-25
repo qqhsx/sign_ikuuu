@@ -16,8 +16,8 @@ def handler(event=None, context=None):
 
     session = requests.session()
 
-    login_url = 'https://ikuuu.one/auth/login'
-    check_url = 'https://ikuuu.one/user/checkin'
+    login_url = 'https://ikuuu.ch/auth/login'
+    check_url = 'https://ikuuu.ch/user/checkin'
 
     header = {
         'origin': 'https://ikuuu.one',
