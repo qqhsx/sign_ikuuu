@@ -16,11 +16,11 @@ def handler(event=None, context=None):
 
     session = requests.session()
 
-    login_url = 'https://ikuuu.ch/auth/login'
-    check_url = 'https://ikuuu.ch/user/checkin'
+    login_url = 'https://ikuuu.de/auth/login'
+    check_url = 'https://ikuuu.de/user/checkin'
 
     header = {
-        'origin': 'https://ikuuu.ch',
+        'origin': 'https://ikuuu.de',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
     }
 
@@ -50,3 +50,4 @@ def handler(event=None, context=None):
 
 if __name__ == "__main__":
     handler()
+
