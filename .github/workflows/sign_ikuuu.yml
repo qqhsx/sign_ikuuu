@@ -21,7 +21,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install requests
-
+          # 安装自定义 wx_msg 模块
+          pip install git+https://github.com/qqhsx/my-utils.git
+          
       - name: Run sign-in script
         env:
           IKUUU_EMAIL: ${{ secrets.IKUUU_EMAIL }}
