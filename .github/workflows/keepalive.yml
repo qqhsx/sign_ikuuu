@@ -1,0 +1,22 @@
+name: Keep Repository Alive
+
+on:
+  schedule:
+    - cron: '0 0 */20 * *'  # 每20天提交一次，可按需调整
+  workflow_dispatch:        # 允许手动运行
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update keep-alive timestamp
+        run: |
+          date '+%Y-%m-%d %H:%M:%S' > .keepalive
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .keepalive
+          git commit -m "chore: keep repo active [skip ci]" || echo "No changes to commit"
+          git push
