@@ -12,6 +12,7 @@ Secret:
 aaa@qq.com:123456
 bbb@qq.com:abcdef
 ccc@qq.com:qwerty
+一行一个账号。不要加空格。
 
 ### 下面为企业微信消息推送（选填）
 
