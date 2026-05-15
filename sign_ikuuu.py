@@ -17,11 +17,43 @@ USER_AGENT = (
 
 
 # ─────────────────────────────
+# 邮箱脱敏
+# ─────────────────────────────
+def mask_email(email):
+    """
+    abc123@gmail.com
+    -> a****3@gmail.com
+    """
+
+    if '@' not in email:
+        return email
+
+    name, domain = email.split('@', 1)
+
+    if len(name) <= 1:
+        masked = name
+
+    elif len(name) == 2:
+        masked = name[0] + '*'
+
+    else:
+        masked = (
+            name[0]
+            + '*' * (len(name) - 2)
+            + name[-1]
+        )
+
+    return f'{masked}@{domain}'
+
+
+# ─────────────────────────────
 # Playwright 登录获取 Cookie
 # ─────────────────────────────
 def playwright_login(email, passwd):
 
-    print(f'\n启动浏览器进行登录：{email}')
+    safe_email = mask_email(email)
+
+    print(f'\n启动浏览器进行登录：{safe_email}')
 
     with sync_playwright() as p:
 
@@ -63,9 +95,13 @@ def playwright_login(email, passwd):
 
         # 点击 “点我开始验证”
         try:
+
             page.click('.geetest_btn_click', timeout=5000)
+
             print('验证按钮点击成功')
+
         except:
+
             print('未找到验证按钮，继续登录')
 
         time.sleep(2)
@@ -92,6 +128,8 @@ def playwright_login(email, passwd):
 # 单账号签到
 # ─────────────────────────────
 def checkin_one_account(email, passwd):
+
+    safe_email = mask_email(email)
 
     check_url = 'https://ikuuu.win/user/checkin'
 
@@ -136,11 +174,11 @@ def checkin_one_account(email, passwd):
 
         print(content)
 
-        return f'✅ {email} -> {content}'
+        return f'✅ {safe_email} -> {content}'
 
     except Exception as e:
 
-        err = f'❌ {email} -> {str(e)}'
+        err = f'❌ {safe_email} -> {str(e)}'
 
         print(err)
 
