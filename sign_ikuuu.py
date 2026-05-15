@@ -159,31 +159,36 @@ def handler(event=None, context=None):
 
     try:
 
-        # 读取多账号环境变量
-        accounts_str = os.environ.get('ACCOUNTS')
-
-        if not accounts_str:
-            raise Exception('未配置 ACCOUNTS 环境变量')
-
-        accounts = []
-
+        # 多账号环境变量
         # 格式：
         # 邮箱1:密码1
         # 邮箱2:密码2
-        for line in accounts_str.strip().splitlines():
+        accounts_str = os.environ.get('ACCOUNTS')
 
-            line = line.strip()
+        accounts = []
 
-            if line and ':' in line:
+        # 优先使用多账号
+        if accounts_str and accounts_str.strip():
 
-                email, passwd = line.split(':', 1)
+            for line in accounts_str.strip().splitlines():
 
-                accounts.append(
-                    (email.strip(), passwd.strip())
-                )
+                line = line.strip()
 
-        if not accounts:
-            raise Exception('ACCOUNTS 格式错误')
+                if line and ':' in line:
+
+                    email, passwd = line.split(':', 1)
+
+                    accounts.append(
+                        (email.strip(), passwd.strip())
+                    )
+
+        else:
+
+            # 兼容旧单账号模式
+            email = os.environ.get('IKUUU_EMAIL') or ''
+            passwd = os.environ.get('IKUUU_PASSWORD') or ''
+
+            accounts.append((email, passwd))
 
         print(f'\n共发现 {len(accounts)} 个账号')
 
