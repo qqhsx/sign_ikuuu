@@ -1,6 +1,5 @@
 from playwright.sync_api import sync_playwright
 import requests
-import json
 import os
 import time
 from wxmsg import send_wx
@@ -16,17 +15,25 @@ USER_AGENT = (
     'Chrome/120.0.0.0 Safari/537.36'
 )
 
+LOGIN_URL = 'https://ikuuu.win/auth/login'
+CHECK_URL = 'https://ikuuu.win/user/checkin'
 
+
+# ─────────────────────────────
+# Playwright 登录获取 Cookie
+# ─────────────────────────────
 def playwright_login(email, passwd):
 
-    print('启动浏览器进行登录...')
+    print(f'\n启动浏览器登录：{email}')
 
     with sync_playwright() as p:
 
         browser = p.chromium.launch(
             headless=True,
             args=[
-                '--disable-blink-features=AutomationControlled'
+                '--disable-blink-features=AutomationControlled',
+                '--no-sandbox',
+                '--disable-dev-shm-usage'
             ]
         )
 
@@ -45,53 +52,56 @@ def playwright_login(email, passwd):
 
         page = context.new_page()
 
-        # 打开登录页
-        page.goto(
-            'https://ikuuu.win/auth/login',
-            wait_until='networkidle'
-        )
-
-        print('填写账号密码...')
-
-        # 输入账号密码
-        page.fill('#email', email)
-        page.fill('#password', passwd)
-
-        print('点击验证按钮...')
-
-        # 点击 “点我开始验证”
         try:
-            page.click('.geetest_btn_click', timeout=5000)
-            print('验证按钮点击成功')
-        except:
-            print('未找到验证按钮，继续登录')
 
-        time.sleep(2)
+            # 打开登录页
+            print('打开登录页面...')
+            page.goto(
+                LOGIN_URL,
+                wait_until='networkidle',
+                timeout=60000
+            )
 
-        print('点击登录按钮...')
+            # 输入账号密码
+            print('填写账号密码...')
+            page.fill('#email', email)
+            page.fill('#password', passwd)
 
-        # 点击登录
-        page.click('button[type="submit"]')
+            # 点击验证按钮
+            print('点击验证按钮...')
 
-        # 等待跳转
-        time.sleep(5)
+            try:
+                page.click('.geetest_btn_click', timeout=5000)
+                print('验证按钮点击成功')
+            except:
+                print('未找到验证按钮，继续登录')
 
-        print('获取 Cookie...')
+            time.sleep(2)
 
-        # 获取浏览器 Cookie
-        cookies = context.cookies()
+            # 点击登录
+            print('点击登录按钮...')
+            page.click('button[type="submit"]')
 
-        browser.close()
+            # 等待登录
+            time.sleep(5)
 
-        return cookies
+            # 获取 Cookie
+            print('获取 Cookie...')
+            cookies = context.cookies()
+
+            if not cookies:
+                raise Exception('未获取到 Cookie')
+
+            return cookies
+
+        finally:
+            browser.close()
 
 
-def handler(event=None, context=None):
-
-    email = os.environ.get('IKUUU_EMAIL') or ''
-    passwd = os.environ.get('IKUUU_PASSWORD') or ''
-
-    check_url = 'https://ikuuu.win/user/checkin'
+# ─────────────────────────────
+# 单账号签到
+# ─────────────────────────────
+def checkin_one_account(email, passwd):
 
     header = {
         'origin': 'https://ikuuu.win',
@@ -100,17 +110,14 @@ def handler(event=None, context=None):
 
     try:
 
-        # ───────────── 登录获取 Cookie ─────────────
+        # Playwright 登录
         pw_cookies = playwright_login(email, passwd)
 
-        if not pw_cookies:
-            raise Exception('未获取到 Cookie')
-
+        # 创建 requests session
         print('创建 requests session...')
-
         session = requests.session()
 
-        # 把 Playwright Cookie 导入 requests
+        # 导入 Cookie
         for c in pw_cookies:
 
             name = c.get('name')
@@ -119,11 +126,11 @@ def handler(event=None, context=None):
             if name and value:
                 session.cookies.set(name, value)
 
+        # 开始签到
         print('开始签到...')
 
-        # requests 执行签到
         result = session.post(
-            url=check_url,
+            url=CHECK_URL,
             headers=header,
             timeout=20
         ).json()
@@ -134,9 +141,75 @@ def handler(event=None, context=None):
 
         print(content)
 
+        return f'✅ {email} -> {content}'
+
+    except Exception as e:
+
+        err = f'❌ {email} -> {str(e)}'
+
+        print(err)
+
+        return err
+
+
+# ─────────────────────────────
+# 主函数
+# ─────────────────────────────
+def handler(event=None, context=None):
+
+    try:
+
+        # 读取多账号环境变量
+        accounts_str = os.environ.get('ACCOUNTS') or '''
+		'''
+
+        if not accounts_str:
+            raise Exception('未配置 ACCOUNTS 环境变量')
+
+        accounts = []
+
+        # 格式：
+        # 邮箱1:密码1
+        # 邮箱2:密码2
+        for line in accounts_str.strip().splitlines():
+
+            line = line.strip()
+
+            if line and ':' in line:
+
+                email, passwd = line.split(':', 1)
+
+                accounts.append(
+                    (email.strip(), passwd.strip())
+                )
+
+        if not accounts:
+            raise Exception('ACCOUNTS 格式错误')
+
+        print(f'\n共发现 {len(accounts)} 个账号')
+
+        all_result = []
+
+        # 逐个账号签到
+        for idx, (email, passwd) in enumerate(accounts, 1):
+
+            print('\n' + '=' * 50)
+            print(f'开始处理第 {idx} 个账号')
+            print('=' * 50)
+
+            result = checkin_one_account(email, passwd)
+
+            all_result.append(result)
+
+        # 汇总结果
+        final_msg = '\n'.join(all_result)
+
+        print('\n最终结果：')
+        print(final_msg)
+
         # 企业微信通知
         send_wx(
-            f"[ikuuu] 签到结果：{content}",
+            f"[ikuuu] 多账号签到结果：\n{final_msg}",
             corpid,
             corpsecret,
             agentid
