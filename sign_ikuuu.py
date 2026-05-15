@@ -160,8 +160,7 @@ def handler(event=None, context=None):
     try:
 
         # 读取多账号环境变量
-        accounts_str = os.environ.get('ACCOUNTS') or '''
-		'''
+        accounts_str = os.environ.get('ACCOUNTS')
 
         if not accounts_str:
             raise Exception('未配置 ACCOUNTS 环境变量')
