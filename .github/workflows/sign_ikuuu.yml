@@ -3,7 +3,7 @@ name: Auto Sign-in for BBS
 on:
   schedule:
     - cron: '10 23 * * *'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   sign_in_job:
@@ -16,14 +16,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           pip install requests
-          # 安装自定义 wx_msg 模块
+          pip install playwright
           pip install git+https://github.com/qqhsx/my-utils.git
-          
+
+      # 安装 Chromium 浏览器
+      - name: Install Playwright Browsers
+        run: |
+          playwright install chromium
+
       - name: Run sign-in script
         env:
           IKUUU_EMAIL: ${{ secrets.IKUUU_EMAIL }}
@@ -31,4 +36,4 @@ jobs:
           WX_CORPID: ${{ secrets.WX_CORPID }}
           WX_CORPSECRET: ${{ secrets.WX_CORPSECRET }}
           WX_AGENTID: ${{ secrets.WX_AGENTID }}
-        run: python sign_ikuuu.py  # 脚本名
+        run: python sign_ikuuu.py
