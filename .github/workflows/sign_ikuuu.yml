@@ -31,8 +31,7 @@ jobs:
 
       - name: Run sign-in script
         env:
-          IKUUU_EMAIL: ${{ secrets.IKUUU_EMAIL }}
-          IKUUU_PASSWORD: ${{ secrets.IKUUU_PASSWORD }}
+          ACCOUNTS: ${{ secrets.ACCOUNTS }}
           WX_CORPID: ${{ secrets.WX_CORPID }}
           WX_CORPSECRET: ${{ secrets.WX_CORPSECRET }}
           WX_AGENTID: ${{ secrets.WX_AGENTID }}
