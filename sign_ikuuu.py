@@ -46,30 +46,18 @@ def mask_email(email):
 # ─────────────────────────────
 # Server酱通知函数
 # ─────────────────────────────
-def send_serverchan(msg):
-    """
-    发送Server酱通知
-    """
-    if not SCKEY:
-        print("未配置SCKEY，跳过Server酱通知")
-        return
-    
-    url = f"https://sctapi.ftqq.com/{SCKEY}.send"
-    data = {
-        "title": "ikuuu签到结果",
-        "desp": msg
-    }
-    
-    try:
-        response = requests.post(url, data=data, timeout=10)
-        response.raise_for_status()
-        result = response.json()
-        if result.get("code") == 0:
-            print("Server酱通知发送成功")
-        else:
-            print(f"Server酱通知发送失败：{result.get('message')}")
-    except Exception as e:
-        print(f"Server酱通知发送异常：{str(e)}")
+def push(content):
+    if SCKEY != '1':
+        url = "https://1614.push.ft07.com/send/{}.send?title={}&desp={}".format(SCKEY, 'ikuuu签到', content)
+        requests.post(url)
+        print('推送完成')
+    elif Token != '1':
+        headers = {'Content-Type': 'application/json'}
+        json = {"token": Token, 'title': 'ikuuu签到', 'content': content, "template": "json"}
+        resp = requests.post(f'http://www.pushplus.plus/send', json=json, headers=headers).json()
+        print('push+推送成功' if resp['code'] == 200 else 'push+推送失败')
+    else:
+        print('未使用消息推送推送！')
 
 
 # ─────────────────────────────
