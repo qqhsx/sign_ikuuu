@@ -44,20 +44,29 @@ def mask_email(email):
 
 
 # ─────────────────────────────
-# Server酱通知函数
+# Server酱通知函数（已修复）
 # ─────────────────────────────
-def push(content):
-    if SCKEY != '1':
-        url = "https://1614.push.ft07.com/send/{}.send?title={}&desp={}".format(SCKEY, 'ikuuu签到', content)
-        requests.post(url)
-        print('推送完成')
-    elif Token != '1':
-        headers = {'Content-Type': 'application/json'}
-        json = {"token": Token, 'title': 'ikuuu签到', 'content': content, "template": "json"}
-        resp = requests.post(f'http://www.pushplus.plus/send', json=json, headers=headers).json()
-        print('push+推送成功' if resp['code'] == 200 else 'push+推送失败')
-    else:
-        print('未使用消息推送推送！')
+def send_serverchan(content):
+    if not SCKEY or SCKEY.strip() == "":
+        print("未配置 SCKEY，跳过推送")
+        return
+
+    # 官方标准接口，稳定可用
+    url = f"https://1614.push.ft07.com/send/<sendkey>.send"
+    data = {
+        "title": "ikuuu 签到结果",
+        "desp": content
+    }
+
+    try:
+        res = requests.post(url, data=data, timeout=10)
+        result = res.json()
+        if result.get("code") == 0:
+            print("✅ Server酱 推送成功")
+        else:
+            print(f"❌ Server酱 推送失败：{result}")
+    except Exception as e:
+        print(f"❌ 推送异常：{str(e)}")
 
 
 # ─────────────────────────────
@@ -86,7 +95,7 @@ def playwright_login(email, passwd):
 
         # 隐藏自动化特征
         context.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {
+            Object.defineProperty(navigator, webdriver, {
                 get: () => undefined
             });
         """)
@@ -109,13 +118,9 @@ def playwright_login(email, passwd):
 
         # 点击 “点我开始验证”
         try:
-
             page.click('.geetest_btn_click', timeout=5000)
-
             print('验证按钮点击成功')
-
         except:
-
             print('未找到验证按钮，继续登录')
 
         time.sleep(2)
@@ -144,7 +149,6 @@ def playwright_login(email, passwd):
 def checkin_one_account(email, passwd):
 
     safe_email = mask_email(email)
-
     check_url = 'https://ikuuu.win/user/checkin'
 
     header = {
@@ -153,7 +157,6 @@ def checkin_one_account(email, passwd):
     }
 
     try:
-
         # 登录获取 Cookie
         pw_cookies = playwright_login(email, passwd)
 
@@ -161,15 +164,12 @@ def checkin_one_account(email, passwd):
             raise Exception('未获取到 Cookie')
 
         print('创建 requests session...')
-
         session = requests.session()
 
         # 导入 Cookie
         for c in pw_cookies:
-
             name = c.get('name')
             value = c.get('value')
-
             if name and value:
                 session.cookies.set(name, value)
 
@@ -183,19 +183,14 @@ def checkin_one_account(email, passwd):
         ).json()
 
         print(result)
-
         content = result.get('msg', '未知结果')
-
         print(content)
 
         return f'✅ {safe_email} -> {content}'
 
     except Exception as e:
-
         err = f'❌ {safe_email} -> {str(e)}'
-
         print(err)
-
         return err
 
 
@@ -205,30 +200,18 @@ def checkin_one_account(email, passwd):
 def handler(event=None, context=None):
 
     try:
-
         # 多账号环境变量
-        # 格式：
-        # aaa@qq.com:123456
-        # bbb@qq.com:abcdef
-
         accounts_str = os.environ.get('ACCOUNTS')
 
         if not accounts_str:
             raise Exception('未配置 ACCOUNTS 环境变量')
 
         accounts = []
-
         for line in accounts_str.strip().splitlines():
-
             line = line.strip()
-
             if line and ':' in line:
-
                 email, passwd = line.split(':', 1)
-
-                accounts.append(
-                    (email.strip(), passwd.strip())
-                )
+                accounts.append((email.strip(), passwd.strip()))
 
         if not accounts:
             raise Exception('未读取到账号')
@@ -236,34 +219,25 @@ def handler(event=None, context=None):
         print(f'\n共发现 {len(accounts)} 个账号')
 
         all_result = []
-
         # 逐个账号签到
         for idx, (email, passwd) in enumerate(accounts, 1):
-
             print('\n' + '=' * 50)
             print(f'开始处理第 {idx} 个账号')
             print('=' * 50)
-
             result = checkin_one_account(email, passwd)
-
             all_result.append(result)
 
         # 汇总结果
         final_msg = '\n'.join(all_result)
-
         print('\n最终结果：')
         print(final_msg)
 
-        # Server酱通知
+        # 推送
         send_serverchan(f"[ikuuu] 多账号签到结果：\n{final_msg}")
 
     except Exception as e:
-
         content = f'签到失败：{str(e)}'
-
         print(content)
-
-        # Server酱通知
         send_serverchan(f"[ikuuu] 签到结果：{content}")
 
     return '任务完成'
