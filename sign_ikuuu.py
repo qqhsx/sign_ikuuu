@@ -2,12 +2,9 @@ from playwright.sync_api import sync_playwright
 import requests
 import os
 import time
-from wxmsg import send_wx
 
-# 企业微信配置
-corpid = os.environ.get('WX_CORPID') or ''
-corpsecret = os.environ.get('WX_CORPSECRET') or ''
-agentid = os.environ.get('WX_AGENTID') or ''
+# Server酱配置
+SCKEY = os.environ.get('SCKEY') or ''  # Server酱的SCKEY
 
 USER_AGENT = (
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -44,6 +41,35 @@ def mask_email(email):
         )
 
     return f'{masked}@{domain}'
+
+
+# ─────────────────────────────
+# Server酱通知函数
+# ─────────────────────────────
+def send_serverchan(msg):
+    """
+    发送Server酱通知
+    """
+    if not SCKEY:
+        print("未配置SCKEY，跳过Server酱通知")
+        return
+    
+    url = f"https://sctapi.ftqq.com/{SCKEY}.send"
+    data = {
+        "title": "ikuuu签到结果",
+        "desp": msg
+    }
+    
+    try:
+        response = requests.post(url, data=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        if result.get("code") == 0:
+            print("Server酱通知发送成功")
+        else:
+            print(f"Server酱通知发送失败：{result.get('message')}")
+    except Exception as e:
+        print(f"Server酱通知发送异常：{str(e)}")
 
 
 # ─────────────────────────────
@@ -240,13 +266,8 @@ def handler(event=None, context=None):
         print('\n最终结果：')
         print(final_msg)
 
-        # 企业微信通知
-        send_wx(
-            f"[ikuuu] 多账号签到结果：\n{final_msg}",
-            corpid,
-            corpsecret,
-            agentid
-        )
+        # Server酱通知
+        send_serverchan(f"[ikuuu] 多账号签到结果：\n{final_msg}")
 
     except Exception as e:
 
@@ -254,12 +275,8 @@ def handler(event=None, context=None):
 
         print(content)
 
-        send_wx(
-            f"[ikuuu] 签到结果：{content}",
-            corpid,
-            corpsecret,
-            agentid
-        )
+        # Server酱通知
+        send_serverchan(f"[ikuuu] 签到结果：{content}")
 
     return '任务完成'
 
